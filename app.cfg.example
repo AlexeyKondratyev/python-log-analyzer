@@ -1,0 +1,9 @@
+{
+    "REPORT_SIZE": 1000,
+    "REPORT_DIR": "./reports",
+    "URI_LOG_DIR": "./log",
+    "CONFIG_FILE_PATH": "./app.cfg",
+    "LOG_FILE_PATH": "./app.log",
+    "LOG_FORMAT": r'[%(asctime)s] %(levelname).1s %(message)s',
+    "LOG_DATETIME_FORMAT": "%Y.%m.%d %H:%M:%S"
+}
