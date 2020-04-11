@@ -4,4 +4,4 @@ app.log
 app.cfg
 log
 __pycache__
-output.tmp
+*.tmp
