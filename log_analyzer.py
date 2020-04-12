@@ -30,75 +30,6 @@ default_config = {
     "LOG_DATETIME_FORMAT": "%Y.%m.%d %H:%M:%S"
 }
 
-# Готовим рутовый логгер котрый работает с дефолтовой конфигурацей до проверки --config
-# logging.basicConfig(filename=None, \
-#                 level=logging.INFO, \
-#                 format=default_config["LOG_FORMAT"], \
-#                 datefmt=default_config["LOG_DATETIME_FORMAT"])
-
-# # Функция возвращает путь к лог файлу есть файл есть
-# def find_log_file(_log_path=default_config["LOG_FILE_PATH"]):
-#   if os.path.exists(_log_path):
-#     return _log_path
-#   else:
-#     logging.info("Can't find app log file, a stdout will be used")
-#     return None
-
-# Функция поиска конфигурации, берет --config, 
-# если нет - берет app.cfg, 
-# если нет берет default_config
-# def find_config(_config=default_config):
-#   arg_parser = argparse.ArgumentParser()
-#   arg_parser.add_argument("--config", default=_config["CONFIG_FILE_PATH"] ,help="You could specify configuration file")
-#   args=arg_parser.parse_args()
-#   config_file_path=args.config
-#   if os.path.exists(config_file_path):
-#     with open(config_file_path, encoding='UTF-8') as datafile:
-#       data = json.load(datafile)
-#       _config.update(data)
-#   return _config
-
-# # Определение даты создания исходя из имени лог файла
-# def convert_to_date(_str):
-#   _re=re.split('\.|-',_str)[4]
-#   return datetime.datetime.strptime(_re, '%Y%m%d')
-
-# # Ищем самый свежий файл по дате в названии файла
-# def find_last_url_log_file(_config=default_config):
-#   list_of_files = os.listdir(_config["URI_LOG_DIR"]) 
-#   dict_of_files = {_file: convert_to_date(_file) for _file in list_of_files}
-#   return _config["URI_LOG_DIR"] + '/' + max(dict_of_files, key=dict_of_files.get)
-
-# #Определяет есть ли отчёт по пути к последнему логу
-# def find_result_file(_path, _config=default_config):
-#     _date = convert_to_date(_path)
-#     report_path = _config["REPORT_DIR"] + "/report-" + datetime.datetime.strftime(_date, "%Y.%m.%d.") + "html"
-#     if os.path.exists(report_path):
-#       print(report_path)
-#       return report_path
-#     else:
-#       return None
-
-# def extract_data_from_file(_path):
-#   print(_path)
-#   if _path.endswith(".gz"):
-#     logfile = gzip.open(_path, mode="rt", encoding="utf_8")
-#   else:
-#     logfile = open(_path, mode="rt", encoding="utf_8")
-#   for line in logfile:
-#       yield line
-#   logfile.close()
-
-# def save_result(dir_reports, data):
-#   result_list = [i[1] for i in data.items()]
-#   print(result_list)
-#   if os.path.isdir(dir_reports):
-#     with open(os.path.join(dir_reports, 'report.html'), 'r', encoding='utf-8') as template:
-#       now = datetime.datetime.strftime(datetime.datetime.now(), '%Y.%m.%d' )
-#       with open(os.path.join(dir_reports, f'report-{now}.html'), 'w', encoding='utf-8' ) as report:
-#         report.write(template.read().replace("$table_json", str(result_list)))
-##########################################################################
-
 def check_config_from_cli(config):
   arg_parser = argparse.ArgumentParser()
   arg_parser.add_argument("--config", default=config["CONFIG_FILE_FULL_PATH"] ,help="You could specify configuration file, look at app.cfg.example")
@@ -125,13 +56,6 @@ def report_existence_check(path):
     if date == datetime.datetime.strftime(datetime.datetime.now(),'%Y.%m.%d'):
       return name
   return False
-
-    # match = re.match(r'^report-(\d{4}\.\d{2}\.\d{2})\.html$', f)
-    # # if os.path.exists(config_file_path):
-    # if match and match.group(1) == datetime.datetime.strftime(datetime.datetime.now(),'%Y.%m.%d'):
-    #   return True
-    # else:
-    #   return False
 
 def log_file_existence_check(path):
 
@@ -240,7 +164,6 @@ def report_saving(dir_reports, data):
     report_file = os.path.join(dir_reports, f'report-{now}.html')
 
     with open(os.path.join(dir_reports, 'report.html'), 'r', encoding='utf-8') as template:  
-      # with open(os.path.join(dir_reports, f'report-{now}.html'), 'w', encoding='utf-8' ) as report:
       with open(tmp_file, 'w', encoding='utf-8' ) as tmp:  
         tmp.write(template.read().replace("$table_json", str(result_list)))
     os.system('cp {} {}'.format(tmp_file, report_file))
