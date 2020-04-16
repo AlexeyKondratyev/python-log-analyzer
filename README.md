@@ -45,10 +45,11 @@ python3  log_analyzer.py --config app.cfg
 '''
 
 ## Отчёт
-* count - сколько раз встречается URL, абсолютное значение;
-* count_perc - сколько раз встречается URL, в процентнах относительно общего числа запросов;
-* time_sum - суммарный \$request_time для данного URL'а, абсолютное значение;
-* time_perc - суммарный \$request_time для данного URL'а, в процентах относительно общего $request_time всех запросов;
-* time_avg - средний \$request_time для данного URL'а;
-* time_max - максимальный \$request_time для данного URL'а;
-* time_med - медиана \$request_time для данного URL'а.
+
+- count - сколько раз встречается URL, абсолютное значение;
+- count_perc - сколько раз встречается URL, в процентнах относительно общего числа запросов;
+- time_sum - суммарный \$request_time для данного URL'а, абсолютное значение;
+- time_perc - суммарный \$request_time для данного URL'а, в процентах относительно общего $request_time всех запросов;
+- time_avg - средний \$request_time для данного URL'а;
+- time_max - максимальный \$request_time для данного URL'а;
+- time_med - медиана \$request_time для данного URL'а.

@@ -5,3 +5,4 @@ app.cfg
 log
 __pycache__
 *.tmp
+report-*
