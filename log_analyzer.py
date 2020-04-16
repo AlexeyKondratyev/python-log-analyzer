@@ -34,7 +34,7 @@ default_config = {
 }
 
 
-# Берем полный путь файл конфигурации в --config 
+# Берем полный путь файл конфигурации в --config
 def check_config_from_cli(config):
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--config",
@@ -56,6 +56,7 @@ def config_parsing(path):
     else:
         return None
 
+
 def logging_init(name, fmt, datefmt, path):
     logger = logging.getLogger(name)
     formatter = logging.Formatter(fmt=fmt,
@@ -66,8 +67,9 @@ def logging_init(name, fmt, datefmt, path):
         handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(logging.INFO) 
+    logger.setLevel(logging.INFO)
     return logger
+
 
 # Вспомогательная функция для матчинга имен файлов
 def match_date(re_template, _str):
@@ -206,9 +208,10 @@ def report_saving(dir_reports, data):
         now = datetime.datetime.strftime(datetime.datetime.now(), '%Y.%m.%d')
         report_file = os.path.join(dir_reports, f'report-{now}.html')
         with open(os.path.join(dir_reports, 'report.html'), 'r',
-                encoding='utf-8') as template:
+                  encoding='utf-8') as template:
             with open(tmp_file, 'w', encoding='utf-8') as tmp:
-                tmp.write(template.read().replace("$table_json", str(result_list)))
+                tmp.write(template.read().replace("$table_json",
+                                                  str(result_list)))
         os.system('cp {} {}'.format(tmp_file, report_file))
         os.remove(tmp_file)
     else:
@@ -216,15 +219,15 @@ def report_saving(dir_reports, data):
 
 
 def main(config):
-    # Проверяем есть ли что в --config, если нет - выходим 
+    # Проверяем есть ли что в --config, если нет - выходим
     config_file_path = check_config_from_cli(default_config)
     if config_file_path:
-        #Пробуем парсить файл, если ничего нет - выходим
-        parsed_config = config_parsing(config_file_path) 
+        # Пробуем парсить файл, если ничего нет - выходим
+        parsed_config = config_parsing(config_file_path)
         if parsed_config:
             config.update(parsed_config)
             print("file config is used")
-        else: 
+        else:
             print("cant parsing file")
             sys.exit(0)
     else:

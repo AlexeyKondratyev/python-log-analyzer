@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 
 import unittest
 import json
@@ -27,7 +30,8 @@ class Test_config_parsing(unittest.TestCase):
         self.assertIsNone(log_analyzer.report_existence_check(test_path))
 
     def test_log_file_existence_check_from_sample(self):
-        self.assertEqual(log_analyzer.log_file_existence_check(self.sample_path),
+        full_path = log_analyzer.log_file_existence_check(self.sample_path)
+        self.assertEqual(full_path,
                          './test_sample/nginx-access-ui.log-20991231.gz')
 
     def test_log_file_parsing_and_get_top_from_sample(self):
