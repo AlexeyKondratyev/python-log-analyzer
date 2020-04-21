@@ -21,6 +21,7 @@ import hashlib
 import unittest
 import shutil
 import sys
+import time
 
 default_config = {
     "REPORT_SIZE": 1000,
@@ -33,6 +34,18 @@ default_config = {
     "LOG_DATETIME_FORMAT": "%Y.%m.%d %H:%M:%S"
 }
 
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if 'log_time' in kw:
+            name = kw.get('log_name', method.__name__.upper())
+            kw['log_time'][name] = int((te - ts) * 1000)
+        else:
+            print('%r  %2.2f ms' % (method.__name__, (te - ts) * 1000))
+        return result
+    return timed
 
 # Берем полный путь файл конфигурации в --config
 def check_config_from_cli(config):
@@ -44,8 +57,6 @@ def check_config_from_cli(config):
     args = arg_parser.parse_args()
     if args.config:
         return args.config
-    else:
-        return None
 
 
 # Парсим то что в файле и перезаписываем сопадающие в default_config ключи
@@ -53,8 +64,6 @@ def config_parsing(path):
     if os.path.exists(path):
         with open(path, encoding='UTF-8') as datafile:
             return json.load(datafile)
-    else:
-        return None
 
 
 def logging_init(name, fmt, datefmt, path):
@@ -76,18 +85,6 @@ def match_date(re_template, _str):
     match = re.match(re_template, _str)
     if match:
         return match.group(1)
-    else:
-        return None
-
-
-def report_existence_check(path):
-    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y.%m.%d')
-    report_file = os.path.join(path, f'report-{now}.html')
-
-    if os.path.isfile(report_file):
-        return report_file
-    else:
-        return None
 
 
 def log_file_existence_check(path):
@@ -97,9 +94,18 @@ def log_file_existence_check(path):
     re_template = r'^nginx-access-ui\.log-(\d{8})\..*$'
     files = {f: match_date(re_template, f) for f in os.listdir(path)}
     if files:
-        return path + max(files, key=files.get)
-    else:
-        return None
+        match_name = max(files, key=files.get)
+        full_path = path + match_name
+        return full_path, files[match_name]
+
+
+def report_existence_check(log_path,re_date):
+    # now = datetime.datetime.strftime(datetime.datetime.now(), '%Y.%m.%d')
+    # report_file = os.path.join(log_path, f'report-{now}.html')
+    date_from_log = "{}.{}.{}".format(re_date[:4],re_date[4:6],re_date[6:8])
+    report_file = os.path.join(log_path, f'report-{date_from_log}.html')
+    if os.path.isfile(report_file):
+        return report_file
 
 
 def get_line_from_file(path):
@@ -113,6 +119,7 @@ def get_line_from_file(path):
 
 
 # Генератор для получения строк из файла
+@timeit
 def log_file_parsing(path):
     logfile_re_pattern = r'^.*[GET|POST|HEAD]\s(.*)HTTP.*(\d+\.\d{3})$'
     urls_error_count = 0
@@ -135,6 +142,7 @@ def log_file_parsing(path):
         else:
             url = str(match.group(1))
             url_hash = hashlib.sha1(url.encode('utf-8')).hexdigest()[:16]
+            # url_hash = url
             time = float(match.group(2))
             urls_total_time += time
 
@@ -163,7 +171,7 @@ def median(lst):
     else:
         return sum(sorted(lst)[n//2-1:n//2+1])/2.0
 
-
+@timeit
 def get_top_requests(urls, urls_count, urls_total_time, report_size):
     # Выбираем топ запросов по time после парсинга
     _top = {
@@ -200,13 +208,15 @@ def get_top_requests(urls, urls_count, urls_total_time, report_size):
 
 
 # Переводим в данные в список json
-def report_saving(dir_reports, data):
+def report_saving(dir_reports, data, re_date):
     result_list = [i[1] for i in data.items()]
     print(result_list)
     if os.path.isdir(dir_reports):
         tmp_file = os.path.join(dir_reports, 'report.tmp')
-        now = datetime.datetime.strftime(datetime.datetime.now(), '%Y.%m.%d')
-        report_file = os.path.join(dir_reports, f'report-{now}.html')
+        # now = datetime.datetime.strftime(datetime.datetime.now(), '%Y.%m.%d')
+        # report_file = os.path.join(dir_reports, f'report-{now}.html')
+        date_from_log = "{}.{}.{}".format(re_date[:4],re_date[4:6],re_date[6:8])
+        report_file = os.path.join(dir_reports, f'report-{date_from_log}.html')
         with open(os.path.join(dir_reports, 'report.html'), 'r',
                   encoding='utf-8') as template:
             with open(tmp_file, 'w', encoding='utf-8') as tmp:
@@ -214,8 +224,6 @@ def report_saving(dir_reports, data):
                                                   str(result_list)))
         os.system('cp {} {}'.format(tmp_file, report_file))
         os.remove(tmp_file)
-    else:
-        return None
 
 
 def main(config):
@@ -241,20 +249,19 @@ def main(config):
                           config["LOG_FILE_FULL_PATH"]
                           )
 
-    # Проверяем есть ли уже файл отчёта с сегодняшней датой, если есть выходим
-    if report_existence_check(config["REPORT_DIR"]):
-        logger.exception("report already exists")
-        sys.exit(0)
-
     # Ищем последний файл лога, если ничего не нашли выходим
     if not log_file_existence_check(config["URL_LOG_DIR"]):
         logger.exception("log file not found")
         sys.exit(0)
 
-    # Парсим файл, если ошибик больше чем ERROR_LIMIT, выходим
-    log_file_full_path = log_file_existence_check(config["URL_LOG_DIR"])
-    logger.info("log file parsing")
+    # Проверяем есть ли уже файл отчёта с сегодняшней датой, если есть выходим
+    log_file_full_path, log_re_date = log_file_existence_check(config["URL_LOG_DIR"])
+    if report_existence_check(config["REPORT_DIR"], log_re_date):
+        logger.exception("report already exists")
+        sys.exit(0)
 
+    # Парсим файл, если ошибик больше чем ERROR_LIMIT, выходим
+    logger.info("log file parsing")
     data, count, total_time, error_perc = log_file_parsing(log_file_full_path)
 
     if error_perc > config["ERROR_LIMIT_PERC"]:
@@ -266,10 +273,10 @@ def main(config):
     # Выбираем топ запросов по суммарныму времени обработки
     logger.info("top forming")
     top_requests = get_top_requests(data, count, total_time,
-                                    config["REPORT_SIZE"])
+                                config["REPORT_SIZE"])
 
     # Сохраняем отчёт
-    report_saving(config["REPORT_DIR"], top_requests)
+    report_saving(config["REPORT_DIR"], top_requests, log_re_date)
 
 
 if __name__ == "__main__":
